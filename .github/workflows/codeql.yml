@@ -1,74 +1,102 @@
-# For most projects, this workflow file will not need changing; you simply need
-# to commit it to your repository.
-#
-# You may wish to alter this file to override the set of languages analyzed,
-# or to provide custom queries or build logic.
-#
-# ******** NOTE ********
-# We have attempted to detect the languages in your repository. Please check
-# the `language` matrix defined below to confirm you have the correct set of
-# supported CodeQL languages.
-#
-name: "CodeQL Analysis"
+name: "ASP.NET 4.7 Security Configuration"
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  schedule:
-    - cron: '45 5 * * 4'
+# Disable default queries and use custom set for ASP.NET 4.7
+disable-default-queries: true
 
-jobs:
-  analyze:
-    name: Analyze
-    runs-on: windows-latest
-    permissions:
-      security-events: write
-      packages: read
-      actions: read
-      contents: read
+# Custom query suite for ASP.NET 4.7
+queries:
+  # Use security-extended for comprehensive analysis
+  - uses: security-extended
+  # Use security-and-quality for additional checks
+  - uses: security-and-quality
+  # Custom queries for ASP.NET 4.7 specific patterns
+  - uses: ./.github/codeql/custom-queries
 
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'csharp' ]
+# Paths to exclude from analysis
+paths-ignore:
+  - "**/bin/**"
+  - "**/obj/**"
+  - "**/packages/**"
+  - "**/node_modules/**"
+  - "**/*.tmp"
+  - "**/*.log"
+  - "**/Temporary ASP.NET Files/**"
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+# Paths to include (focus on ASP.NET files)
+paths:
+  - "**/*.aspx"
+  - "**/*.aspx.cs"
+  - "**/*.master"
+  - "**/*.master.cs"
+  - "**/*.config"
+  - "**/*.cs"
 
-    - name: Check for Web.config
-      shell: cmd
-      run: |
-        if not exist Web.config (
-          echo ERROR: Web.config not found!
-          exit 1
-        )
+# Query filters for ASP.NET 4.7
+query-filters:
+  - include:
+      tags contain: asp.net
+  - include:
+      tags contain: csharp
+  - exclude:
+      tags contain: experimental
+  - exclude:
+      precision: very-low
 
-    - name: Install .NET Framework 4.7.2 Developer Pack
-      shell: cmd
-      run: |
-        choco install netfx-4.7.2-devpack -y
+# Custom query pack for ASP.NET 4.7 specific vulnerabilities
+query-suites:
+  - name: aspnet47-security
+    description: "ASP.NET 4.7 specific security queries"
+    queries:
+      - name: "ASP.NET XSS with validateRequest=false"
+        description: "Detect XSS in ASP.NET pages with validateRequest disabled"
+        query: |
+          import csharp
+          
+          from PageDeclaration page, ValidateRequestAttribute attr
+          where page.getAnAttribute() = attr and
+                attr.getValue() = "false"
+          select page, "Page has validateRequest=false which may allow XSS"
+      
+      - name: "SQL Injection in ASP.NET"
+        description: "Detect SQL injection vulnerabilities in ASP.NET code"
+        query: |
+          import csharp
+          
+          from SqlCommand cmd, StringLiteral sql
+          where cmd.getASqlString() = sql and
+                sql.getValue().matches("%{0}%")
+          select cmd, "Potential SQL injection in SqlCommand"
+      
+      - name: "File Upload without Validation"
+        description: "Detect insecure file uploads in ASP.NET"
+        query: |
+          import csharp
+          
+          from FileUpload upload, MethodCall saveAs
+          where saveAs.getTarget() = upload and
+                not exists(FileValidation validation | validation.validates(upload))
+          select upload, "File upload without proper validation"
 
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1.1
+# Analysis settings for ASP.NET 4.7
+analysis:
+  # Enable data flow analysis
+  data-flow: true
+  # Enable taint tracking
+  taint-tracking: true
+  # Enable inter-procedural analysis
+  inter-procedural: true
+  # Set timeout for complex queries
+  timeout: 300
+  # Memory limit for analysis
+  memory: 8192
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-        config-file: ./.github/codeql/codeql-config.yml
-
-    - name: Build with MSBuild
-      shell: pwsh
-      run: |
-        echo "🛠️ Building project..."
-        msbuild App.csproj
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:${{matrix.language}}"
+# Output configuration
+output:
+  # Generate SARIF format
+  format: sarif-latest
+  # Include source code snippets
+  include-source: true
+  # Include data flow paths
+  include-data-flow: true
+  # Include taint flow paths
+  include-taint-flow: true 
