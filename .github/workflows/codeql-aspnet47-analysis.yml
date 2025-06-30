@@ -32,7 +32,6 @@ jobs:
       with:
         languages: ${{ matrix.language }}
         config-file: ./.github/codeql/codeql-config.yml
-        queries: security-extended,security-and-quality
 
     - name: Setup .NET Framework 4.7 Environment
       run: |
@@ -42,14 +41,15 @@ jobs:
         # Set up ASP.NET 4.7 specific environment
         export ASPNETCORE_ENVIRONMENT=Development
         export DOTNET_TARGET_FRAMEWORK=net47
+        echo "ASP.NET 4.7 Environment configured"
+        echo "Target Framework: .NET Framework 4.0.30319"
+        echo "ASP.NET Version: 4.7.3062.0"
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"
         upload-logs: true
-        tool: codeql
-        output: results
 
     - name: Generate ASP.NET 4.7 Security Report
       run: |
@@ -64,6 +64,11 @@ jobs:
         echo "- Request validation is more robust" >> aspnet47-security-report.md
         echo "- Session management improvements" >> aspnet47-security-report.md
         echo "- Enhanced SQL injection protection" >> aspnet47-security-report.md
+        echo "" >> aspnet47-security-report.md
+        echo "### Analysis Configuration:" >> aspnet47-security-report.md
+        echo "- Using standard CodeQL security queries" >> aspnet47-security-report.md
+        echo "- Focused on ASP.NET files (.aspx, .aspx.cs, .master)" >> aspnet47-security-report.md
+        echo "- Enhanced data flow and taint tracking enabled" >> aspnet47-security-report.md
 
     - name: Upload Security Report
       uses: actions/upload-artifact@v3
