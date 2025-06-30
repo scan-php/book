@@ -114,6 +114,54 @@ jobs:
       with:
         category: "/language:${{matrix.language}}"
 
+    - name: Debug CodeQL Analysis Results
+      run: |
+        echo "=== CodeQL Analysis Debug Information ==="
+        echo "Analysis completed. Checking for results..."
+        
+        # Check if SARIF results were generated
+        if [ -d "results" ]; then
+          echo "Results directory found:"
+          ls -la results/
+          
+          # Look for SARIF files
+          find results/ -name "*.sarif" -type f | while read file; do
+            echo "Found SARIF file: $file"
+            echo "File size: $(wc -c < "$file") bytes"
+            
+            # Check if file contains vulnerability data
+            if grep -q "ruleId" "$file"; then
+              echo "SARIF file contains rule data"
+              echo "Number of results: $(grep -c "ruleId" "$file")"
+            else
+              echo "SARIF file appears to be empty or contains no results"
+            fi
+          done
+        else
+          echo "No results directory found"
+        fi
+        
+        # Show what files were actually analyzed
+        echo ""
+        echo "=== Files Analyzed ==="
+        echo "C# files in repository: $(find . -name '*.cs' | wc -l)"
+        echo "ASPX files in repository: $(find . -name '*.aspx' | wc -l)"
+        echo "Master files in repository: $(find . -name '*.master' | wc -l)"
+        echo "Config files in repository: $(find . -name '*.config' | wc -l)"
+        
+        # Show sample of files that should have been analyzed
+        echo ""
+        echo "Sample files that should be analyzed:"
+        find . -name "*.cs" -o -name "*.aspx" -o -name "*.master" -o -name "*.config" | head -10
+        
+        echo ""
+        echo "=== Potential Reasons for 0 Vulnerabilities ==="
+        echo "1. Framework-level protection (ASP.NET 4.7) is working"
+        echo "2. Code is actually secure (good coding practices)"
+        echo "3. Vulnerabilities are in files not being analyzed"
+        echo "4. Query precision filters are too strict"
+        echo "5. Analysis timeout or memory issues"
+
     - name: Generate ASP.NET 4.7 Security Report
       run: |
         # Create custom report for ASP.NET 4.7 findings
