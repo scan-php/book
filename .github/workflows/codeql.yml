@@ -1,16 +1,10 @@
 name: "ASP.NET 4.7 Security Configuration"
 
-# Disable default queries and use custom set for ASP.NET 4.7
-disable-default-queries: true
-
-# Custom query suite for ASP.NET 4.7
+# Use default CodeQL queries with ASP.NET 4.7 specific configuration
 queries:
-  # Use security-extended for comprehensive analysis
+  # Use standard security queries
   - uses: security-extended
-  # Use security-and-quality for additional checks
   - uses: security-and-quality
-  # Custom queries for ASP.NET 4.7 specific patterns
-  - uses: ./.github/codeql/custom-queries
 
 # Paths to exclude from analysis
 paths-ignore:
@@ -21,6 +15,7 @@ paths-ignore:
   - "**/*.tmp"
   - "**/*.log"
   - "**/Temporary ASP.NET Files/**"
+  - "**/ve-*.tmp"
 
 # Paths to include (focus on ASP.NET files)
 paths:
@@ -34,48 +29,11 @@ paths:
 # Query filters for ASP.NET 4.7
 query-filters:
   - include:
-      tags contain: asp.net
-  - include:
       tags contain: csharp
   - exclude:
       tags contain: experimental
   - exclude:
       precision: very-low
-
-# Custom query pack for ASP.NET 4.7 specific vulnerabilities
-query-suites:
-  - name: aspnet47-security
-    description: "ASP.NET 4.7 specific security queries"
-    queries:
-      - name: "ASP.NET XSS with validateRequest=false"
-        description: "Detect XSS in ASP.NET pages with validateRequest disabled"
-        query: |
-          import csharp
-          
-          from PageDeclaration page, ValidateRequestAttribute attr
-          where page.getAnAttribute() = attr and
-                attr.getValue() = "false"
-          select page, "Page has validateRequest=false which may allow XSS"
-      
-      - name: "SQL Injection in ASP.NET"
-        description: "Detect SQL injection vulnerabilities in ASP.NET code"
-        query: |
-          import csharp
-          
-          from SqlCommand cmd, StringLiteral sql
-          where cmd.getASqlString() = sql and
-                sql.getValue().matches("%{0}%")
-          select cmd, "Potential SQL injection in SqlCommand"
-      
-      - name: "File Upload without Validation"
-        description: "Detect insecure file uploads in ASP.NET"
-        query: |
-          import csharp
-          
-          from FileUpload upload, MethodCall saveAs
-          where saveAs.getTarget() = upload and
-                not exists(FileValidation validation | validation.validates(upload))
-          select upload, "File upload without proper validation"
 
 # Analysis settings for ASP.NET 4.7
 analysis:
