@@ -1,55 +1,60 @@
-name: "CodeQL Config"
+name: "ASP.NET 4.7 Security Configuration"
 
+# Use default CodeQL queries with ASP.NET 4.7 specific configuration
 queries:
+  # Use standard security queries
   - uses: security-extended
   - uses: security-and-quality
 
+# Paths to exclude from analysis
+paths-ignore:
+  - "**/bin/**"
+  - "**/obj/**"
+  - "**/packages/**"
+  - "**/node_modules/**"
+  - "**/*.tmp"
+  - "**/*.log"
+  - "**/Temporary ASP.NET Files/**"
+  - "**/ve-*.tmp"
+
+# Paths to include (focus on ASP.NET files)
 paths:
   - "**/*.aspx"
   - "**/*.aspx.cs"
-  - "**/*.aspx.designer.cs"
   - "**/*.master"
   - "**/*.master.cs"
-  - "**/*.master.designer.cs"
-  - "**/App_Data/**"
-  - "**/MY IMAGES/**"
-  - "**/MY STYLE/**"
-  - "**/web.config"
-  - "**/GeneratedFiles/**"
+  - "**/*.config"
+  - "**/*.cs"
 
-paths-ignore:
-  - "**/*.tmp"
-  - "**/*.lnk"
-  - "**/bin/**"
-  - "**/obj/**"
-
+# Query filters for ASP.NET 4.7
 query-filters:
   - include:
-      tags contain: security
-  - include:
-      tags contain: correctness
-  - include:
-      tags contain: maintainability
-  - include:
-      tags contain: performance
-  - include:
       tags contain: csharp
-  - include:
-      tags contain: asp.net
-  - include:
-      tags contain: webforms
+  - exclude:
+      tags contain: experimental
+  - exclude:
+      precision: very-low
 
-# Custom query settings for .NET Framework 3.5
-query-suites:
-  - security-extended
-  - security-and-quality
-  - csharp-security-extended
-  - csharp-security-and-quality
-
-# Analysis settings
+# Analysis settings for ASP.NET 4.7
 analysis:
-  timeout: 600
-  memory: 4096
-  threads: 4
-  build-mode: manual
-  build-command: msbuild App.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath="bin\Release" /p:GenerateSerializationAssemblies=Auto /p:DebugType=full /p:DebugSymbols=true /p:EmitCompilerGeneratedFiles=true /p:CompilerGeneratedFilesOutputPath="GeneratedFiles" /p:UseWPP_CopyWebApplication=true /p:OutDir="bin\Release\" /p:WebProjectOutputDir="bin\Release\" /p:GenerateTargetFrameworkAttribute=false 
+  # Enable data flow analysis
+  data-flow: true
+  # Enable taint tracking
+  taint-tracking: true
+  # Enable inter-procedural analysis
+  inter-procedural: true
+  # Set timeout for complex queries
+  timeout: 300
+  # Memory limit for analysis
+  memory: 8192
+
+# Output configuration
+output:
+  # Generate SARIF format
+  format: sarif-latest
+  # Include source code snippets
+  include-source: true
+  # Include data flow paths
+  include-data-flow: true
+  # Include taint flow paths
+  include-taint-flow: true 
