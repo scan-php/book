@@ -1,10 +1,13 @@
 name: "ASP.NET 4.7 Security Configuration"
 
-# Use default CodeQL queries with ASP.NET 4.7 specific configuration
+# Use comprehensive CodeQL queries for ASP.NET 4.7
 queries:
   # Use standard security queries
   - uses: security-extended
   - uses: security-and-quality
+  # Add additional query suites for better coverage
+  - uses: security-experimental
+  - uses: csharp-security-and-quality.qls
 
 # Paths to exclude from analysis
 paths-ignore:
@@ -26,12 +29,15 @@ paths:
   - "**/*.config"
   - "**/*.cs"
 
-# Query filters for ASP.NET 4.7
+# Query filters for ASP.NET 4.7 - be more inclusive
 query-filters:
   - include:
       tags contain: csharp
-  - exclude:
-      tags contain: experimental
+  - include:
+      tags contain: security
+  - include:
+      tags contain: asp.net
+  # Only exclude very low precision queries
   - exclude:
       precision: very-low
 
@@ -43,10 +49,12 @@ analysis:
   taint-tracking: true
   # Enable inter-procedural analysis
   inter-procedural: true
+  # Enable cross-file analysis
+  cross-file: true
   # Set timeout for complex queries
-  timeout: 300
+  timeout: 600
   # Memory limit for analysis
-  memory: 8192
+  memory: 16384
 
 # Output configuration
 output:
