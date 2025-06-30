@@ -157,31 +157,58 @@ jobs:
         echo "=== CodeQL Analysis Status Check ==="
         echo "Checking if analysis completed successfully..."
         
-        # Check the exit code of the previous step
-        if [ ${{ steps.analyze.outcome }} == "success" ]; then
-          echo "✅ CodeQL analysis completed successfully"
+        # Check the environment variable that indicates success
+        if [ "$CODEQL_ACTION_ANALYZE_DID_COMPLETE_SUCCESSFULLY" = "true" ]; then
+          echo "✅ CodeQL analysis completed successfully!"
+          echo "Results have been uploaded to GitHub Security tab"
         else
           echo "❌ CodeQL analysis failed or had issues"
-          echo "This might explain why no results were found"
         fi
         
-        # Check for any CodeQL logs
+        # Check for SARIF results in the expected location
         echo ""
-        echo "=== Looking for CodeQL Logs ==="
-        if [ -d ".github/workflows" ]; then
-          find .github/workflows -name "*.log" -type f | head -5
+        echo "=== Looking for CodeQL Results ==="
+        if [ -d "../results" ]; then
+          echo "Results directory found at ../results"
+          ls -la ../results/
+          
+          # Look for SARIF files
+          find ../results/ -name "*.sarif" -type f | while read file; do
+            echo "Found SARIF file: $file"
+            echo "File size: $(wc -c < "$file") bytes"
+            
+            # Check if file contains vulnerability data
+            if grep -q "ruleId" "$file"; then
+              echo "SARIF file contains rule data"
+              echo "Number of results: $(grep -c "ruleId" "$file")"
+            else
+              echo "SARIF file appears to be empty or contains no results"
+            fi
+          done
+        else
+          echo "No results directory found at ../results"
         fi
         
-        # Check for any temporary CodeQL files
+        # Check the current directory for any results
         echo ""
-        echo "=== Looking for CodeQL Temporary Files ==="
-        find /tmp -name "*codeql*" -type d 2>/dev/null | head -3 || echo "No temporary CodeQL directories found"
+        echo "=== Checking Current Directory for Results ==="
+        if [ -d "results" ]; then
+          echo "Results directory found in current directory"
+          ls -la results/
+        else
+          echo "No results directory in current directory"
+        fi
         
         echo ""
         echo "=== Analysis Summary ==="
-        echo "Files found: 24 C# files, 21 ASPX files, 1 master file, 1 config file"
-        echo "Analysis outcome: ${{ steps.analyze.outcome }}"
-        echo "If analysis failed, this explains the 0 vulnerabilities result"
+        echo "Files found: 25 C# files, 21 ASPX files, 1 master file, 1 config file"
+        echo "Analysis completed: $CODEQL_ACTION_ANALYZE_DID_COMPLETE_SUCCESSFULLY"
+        echo ""
+        echo "=== Next Steps ==="
+        echo "1. Check the GitHub Security tab for CodeQL results"
+        echo "2. Look for 'Code scanning' section in your repository"
+        echo "3. Results may take a few minutes to appear"
+        echo "4. If still 0 vulnerabilities, your code might be secure!"
 
     - name: Debug CodeQL Analysis Results
       run: |
