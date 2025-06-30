@@ -1,4 +1,4 @@
-name: "CodeQL ASP.NET 4.7 Security Analysis"
+name: "CodeQL"
 
 on:
   push:
